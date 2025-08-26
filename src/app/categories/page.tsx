@@ -196,7 +196,7 @@ function CategoriesPage() {
                                 className="h-12 w-12 rounded-lg object-cover" 
                                 src={category.image} 
                                 alt={category.name}
-                                width={48}
+                                width={48}       
                                 height={48}
                                 onError={(e) => {
                                   // Hide the image and show fallback
