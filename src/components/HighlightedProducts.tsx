@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { apiService, Product } from '../services/api';
+import { apiService } from '../services/api';
+import { Product } from '../types';
 
 const HighlightedProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,8 +17,8 @@ const HighlightedProducts: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getProducts({ limit: 100 });
-      setProducts(response.data.products);
+      const response = await apiService.getProducts(1, 100);
+      setProducts(Array.isArray(response.data.products) ? response.data.products : []);
     } catch (err) {
       setError('Failed to fetch products');
       console.error('Error fetching products:', err);
@@ -29,7 +30,7 @@ const HighlightedProducts: React.FC = () => {
   const fetchHighlightedProducts = async () => {
     try {
       const response = await apiService.getHighlightedProducts();
-      setHighlightedProducts(response.data.products);
+      setHighlightedProducts(response.products);
     } catch (err) {
       console.error('Error fetching highlighted products:', err);
     }
