@@ -30,6 +30,15 @@ export interface Category {
   updatedAt: string;
 }
 
+export interface Merchant {
+  _id: string;
+  name: string;
+  mobilenumber?: number;
+  address?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductSize {
   size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'Free Size';
   isAvailable: boolean;
@@ -42,9 +51,11 @@ export interface Product {
   description: string;
   category: Category;
   categories: Category[];
+  Owner?: Merchant;
   images: string[];
   price: number;
   originalPrice: number;
+  deposit?: number;
   sizes: ProductSize[];
   color: string;
   brand?: string;
@@ -53,6 +64,8 @@ export interface Product {
   rentalDuration: number;
   isAvailable: boolean;
   isFeatured: boolean;
+  isHighlighted: boolean;
+  highlightOrder: number;
   tags: string[];
   specifications?: Record<string, string>;
   careInstructions?: string;
@@ -158,9 +171,11 @@ export interface CreateProductData {
   name: string;
   description: string;
   categories: string[];
+  Owner?: string;
   images: string[];
   price: number;
   originalPrice: number;
+  deposit?: number;
   sizes: ProductSize[];
   color: string;
   rentalDuration: number;
@@ -171,6 +186,12 @@ export interface CreateProductData {
   careInstructions?: string;
   isFeatured?: boolean;
   specifications?: Record<string, string>;
+}
+
+export interface CreateMerchantData {
+  name: string;
+  mobilenumber?: number;
+  address?: string;
 }
 
 export interface UpdateOrderStatusData {

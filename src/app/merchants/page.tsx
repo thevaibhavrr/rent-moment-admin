@@ -1,113 +1,125 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import Image from 'next/image';
-import { Category } from '@/types';
+import { Merchant } from '@/types';
 import { apiService } from '@/services/api';
 import { PaginatedResponse } from '@/types';
 import toast from 'react-hot-toast';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import ImageUpload from '@/components/ImageUpload';
 import { 
   MagnifyingGlassIcon,
-  PencilIcon,
-  TrashIcon,
   PlusIcon,
-  PhotoIcon
+  PencilIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
-function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+function MerchantsPage() {
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    image: '',
-    sortOrder: 0
+    mobilenumber: '',
+    address: ''
   });
 
-  const fetchCategories = useCallback(async () => {
+  const fetchMerchants = useCallback(async () => {
     try {
       setLoading(true);
-      const response: PaginatedResponse<Category> = await apiService.getCategories(currentPage, 10);
-      setCategories(Array.isArray(response.data.categories) ? response.data.categories : []);
+      const filters: Record<string, string> = {};
+      if (searchTerm) filters.search = searchTerm;
+
+      const response: PaginatedResponse<Merchant> = await apiService.getMerchants(currentPage, 10, filters);
+      setMerchants(Array.isArray(response.data.merchants) ? response.data.merchants : []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
+      console.error('Error fetching merchants:', error);
+      toast.error('Failed to load merchants');
     } finally {
       setLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, searchTerm]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchMerchants();
+  }, [fetchMerchants]);
 
-  const handleAddCategory = async () => {
+  const handleAddMerchant = async () => {
     try {
-      await apiService.createCategory(formData);
-      toast.success('Category created successfully');
+      const merchantData = {
+        ...formData,
+        mobilenumber: formData.mobilenumber ? parseInt(formData.mobilenumber) : undefined
+      };
+      
+      await apiService.createMerchant(merchantData);
+      toast.success('Merchant created successfully');
       setShowAddModal(false);
-      setFormData({ name: '', description: '', image: '', sortOrder: 0 });
-      fetchCategories();
+      resetForm();
+      fetchMerchants();
     } catch (error: unknown) {
-      console.error('Error creating category:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create category';
+      console.error('Error creating merchant:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create merchant';
       toast.error(errorMessage);
     }
   };
 
-  const handleEditCategory = async () => {
-    if (!selectedCategory) return;
+  const handleEditMerchant = async () => {
+    if (!selectedMerchant) return;
     
     try {
-      await apiService.updateCategory(selectedCategory._id, formData);
-      toast.success('Category updated successfully');
+      const merchantData = {
+        ...formData,
+        mobilenumber: formData.mobilenumber ? parseInt(formData.mobilenumber) : undefined
+      };
+      
+      await apiService.updateMerchant(selectedMerchant._id, merchantData);
+      toast.success('Merchant updated successfully');
       setShowEditModal(false);
-      setSelectedCategory(null);
-      setFormData({ name: '', description: '', image: '', sortOrder: 0 });
-      fetchCategories();
+      setSelectedMerchant(null);
+      resetForm();
+      fetchMerchants();
     } catch (error: unknown) {
-      console.error('Error updating category:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update category';
+      console.error('Error updating merchant:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update merchant';
       toast.error(errorMessage);
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
+  const handleDeleteMerchant = async (merchantId: string) => {
+    if (!confirm('Are you sure you want to delete this merchant?')) return;
 
     try {
-      await apiService.deleteCategory(categoryId);
-      toast.success('Category deleted successfully');
-      fetchCategories();
+      await apiService.deleteMerchant(merchantId);
+      toast.success('Merchant deleted successfully');
+      fetchMerchants();
     } catch (error: unknown) {
-      console.error('Error deleting category:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete category';
+      console.error('Error deleting merchant:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete merchant';
       toast.error(errorMessage);
     }
   };
 
-  const openEditModal = (category: Category) => {
-    setSelectedCategory(category);
+  const openEditModal = (merchant: Merchant) => {
+    setSelectedMerchant(merchant);
     setFormData({
-      name: category.name,
-      description: category.description || '',
-      image: category.image,
-      sortOrder: category.sortOrder
+      name: merchant.name,
+      mobilenumber: merchant.mobilenumber?.toString() || '',
+      address: merchant.address || ''
     });
     setShowEditModal(true);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      mobilenumber: '',
+      address: ''
+    });
   };
 
   if (loading) {
@@ -122,9 +134,9 @@ function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Categories</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Merchants</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage product categories
+            Manage clothing merchants
           </p>
         </div>
         <button 
@@ -132,7 +144,7 @@ function CategoriesPage() {
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
-          Add Category
+          Add Merchant
         </button>
       </div>
 
@@ -140,7 +152,7 @@ function CategoriesPage() {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="max-w-md">
           <label htmlFor="search" className="block text-sm font-medium text-gray-700">
-            Search Categories
+            Search Merchants
           </label>
           <div className="mt-1 relative">
             <input
@@ -149,7 +161,7 @@ function CategoriesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="block w-full pr-10 border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Search by name..."
+              placeholder="Search by name or address..."
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
               <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
@@ -158,95 +170,60 @@ function CategoriesPage() {
         </div>
       </div>
 
-      {/* Categories Table */}
+      {/* Merchants Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
+                  Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
+                  Mobile Number
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sort Order
+                  Address
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {categories.map((category) => (
-                <tr key={category._id} className="hover:bg-gray-50">
+              {merchants.map((merchant) => (
+                <tr key={merchant._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                                          <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                            {category.image ? (
-                              <Image 
-                                className="h-12 w-12 rounded-lg object-cover" 
-                                src={category.image} 
-                                alt={category.name}
-                                width={48}
-                                height={48}
-                                onError={(e) => {
-                                  // Hide the image and show fallback
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.nextElementSibling?.classList.remove('hidden');
-                                }}
-                              />
-                            ) : null}
-                            <div className={`h-12 w-12 rounded-lg bg-gray-300 flex items-center justify-center ${category.image ? 'hidden' : ''}`}>
-                              <PhotoIcon className="w-6 h-6 text-gray-500" />
-                            </div>
-                          </div>
-                        </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                        <div className="text-sm text-gray-500">{category.slug}</div>
-                      </div>
+                    <div className="text-sm font-medium text-gray-900">{merchant.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {merchant.mobilenumber ? `+${merchant.mobilenumber}` : '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {category.description || 'No description'}
+                      {merchant.address || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      category.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {category.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    <div className="text-sm text-gray-500">
+                      {new Date(merchant.createdAt).toLocaleDateString()}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {category.sortOrder}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(category.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => openEditModal(category)}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => openEditModal(merchant)}
                         className="text-indigo-600 hover:text-indigo-900"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
-                      <button 
-                        onClick={() => handleDeleteCategory(category._id)}
+                      <button
+                        onClick={() => handleDeleteMerchant(merchant._id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         <TrashIcon className="h-4 w-4" />
@@ -308,12 +285,12 @@ function CategoriesPage() {
         )}
       </div>
 
-      {/* Add Category Modal */}
+      {/* Add Merchant Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Category</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Merchant</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -322,35 +299,28 @@ function CategoriesPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Category name"
+                    placeholder="Merchant name"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
+                  <input
+                    type="tel"
+                    value={formData.mobilenumber}
+                    onChange={(e) => setFormData({ ...formData, mobilenumber: e.target.value })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Mobile number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
                   <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     rows={3}
-                    placeholder="Category description"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Category Image</label>
-                  <ImageUpload
-                    value={formData.image}
-                    onChange={(value) => setFormData({ ...formData, image: value })}
-                    placeholder="Upload category image"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Sort Order</label>
-                  <input
-                    type="number"
-                    value={formData.sortOrder}
-                    onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="0"
+                    placeholder="Address"
                   />
                 </div>
               </div>
@@ -362,10 +332,10 @@ function CategoriesPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleAddCategory}
+                  onClick={handleAddMerchant}
                   className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
                 >
-                  Add Category
+                  Add Merchant
                 </button>
               </div>
             </div>
@@ -373,12 +343,12 @@ function CategoriesPage() {
         </div>
       )}
 
-      {/* Edit Category Modal */}
-      {showEditModal && selectedCategory && (
+      {/* Edit Merchant Modal */}
+      {showEditModal && selectedMerchant && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Category</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Merchant</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -387,35 +357,28 @@ function CategoriesPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Category name"
+                    placeholder="Merchant name"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
+                  <input
+                    type="tel"
+                    value={formData.mobilenumber}
+                    onChange={(e) => setFormData({ ...formData, mobilenumber: e.target.value })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Mobile number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
                   <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     rows={3}
-                    placeholder="Category description"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Category Image</label>
-                  <ImageUpload
-                    value={formData.image}
-                    onChange={(value) => setFormData({ ...formData, image: value })}
-                    placeholder="Upload category image"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Sort Order</label>
-                  <input
-                    type="number"
-                    value={formData.sortOrder}
-                    onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="0"
+                    placeholder="Address"
                   />
                 </div>
               </div>
@@ -427,10 +390,10 @@ function CategoriesPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleEditCategory}
+                  onClick={handleEditMerchant}
                   className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
                 >
-                  Update Category
+                  Update Merchant
                 </button>
               </div>
             </div>
@@ -441,10 +404,10 @@ function CategoriesPage() {
   );
 }
 
-export default function CategoriesPageWrapper() {
+export default function MerchantsPageWrapper() {
   return (
     <ProtectedRoute>
-      <CategoriesPage />
+      <MerchantsPage />
     </ProtectedRoute>
   );
-} 
+}

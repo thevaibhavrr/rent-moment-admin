@@ -9,6 +9,8 @@ import {
   ShoppingBagIcon, 
   TagIcon, 
   ShoppingCartIcon,
+  BuildingStorefrontIcon,
+  StarIcon,
   Bars3Icon,
   XMarkIcon,
   UserCircleIcon,
@@ -25,7 +27,9 @@ const navigation = [
   { name: 'Users', href: '/users', icon: UsersIcon },
   { name: 'Products', href: '/products', icon: ShoppingBagIcon },
   { name: 'Categories', href: '/categories', icon: TagIcon },
+  { name: 'Merchants', href: '/merchants', icon: BuildingStorefrontIcon },
   { name: 'Orders', href: '/orders', icon: ShoppingCartIcon },
+  { name: 'Highlighted', href: '/highlighted', icon: StarIcon },
 ];
 
 export default function Layout({ children }: LayoutProps) {

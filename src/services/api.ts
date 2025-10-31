@@ -11,6 +11,8 @@ import {
   AuthResponse,
   CreateCategoryData,
   CreateProductData,
+  CreateMerchantData,
+  Merchant,
   UpdateOrderStatusData
 } from '@/types';
 
@@ -20,7 +22,8 @@ class ApiService {
 
   constructor() {
     // this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    this.baseURL = 'https://rent-moment-backend.onrender.com/api';
+    // this.baseURL = 'https://cloth-backend-tpce.onrender.com/api';
+    this.baseURL = 'https://rent-moment-backend-971455500628.asia-south1.run.app/api';
     this.api = axios.create({
       baseURL: this.baseURL,
       headers: {
@@ -28,7 +31,7 @@ class ApiService {
       },
     });
 
-    // Request interceptor to add auth token
+    // Request interceptor to add auth token  
     this.api.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('admin_token');
@@ -90,6 +93,36 @@ class ApiService {
 
   async deleteCategory(id: string): Promise<void> {
     await this.api.delete(`/categories/${id}`);
+  }
+
+  // Merchants endpoints
+  async getMerchants(page = 1, limit = 10, filters?: Record<string, string>): Promise<PaginatedResponse<Merchant>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...filters
+    });
+    const response: AxiosResponse<PaginatedResponse<Merchant>> = await this.api.get(`/merchants?${params}`);
+    return response.data;
+  }
+
+  async getMerchant(id: string): Promise<Merchant> {
+    const response: AxiosResponse<ApiResponse<{ merchant: Merchant }>> = await this.api.get(`/merchants/${id}`);
+    return response.data.data!.merchant;
+  }
+
+  async createMerchant(data: CreateMerchantData): Promise<Merchant> {
+    const response: AxiosResponse<ApiResponse<{ merchant: Merchant }>> = await this.api.post('/merchants', data);
+    return response.data.data!.merchant;
+  }
+
+  async updateMerchant(id: string, data: Partial<CreateMerchantData>): Promise<Merchant> {
+    const response: AxiosResponse<ApiResponse<{ merchant: Merchant }>> = await this.api.put(`/merchants/${id}`, data);
+    return response.data.data!.merchant;
+  }
+
+  async deleteMerchant(id: string): Promise<void> {
+    await this.api.delete(`/merchants/${id}`);
   }
 
   // Products endpoints
@@ -186,6 +219,25 @@ class ApiService {
   async getUserStats(): Promise<DashboardStats> {
     const response: AxiosResponse<ApiResponse<{ summary: DashboardStats }>> = await this.api.get('/users/stats/summary');
     return response.data.data!.summary;
+  }
+
+  // Highlight products endpoints
+  async getHighlightedProducts(): Promise<{ products: Product[] }> {
+    const response: AxiosResponse<ApiResponse<{ products: Product[] }>> = await this.api.get('/products/highlighted');
+    return response.data.data!;
+  }
+
+  async highlightProduct(productId: string): Promise<Product> {
+    const response: AxiosResponse<ApiResponse<{ product: Product }>> = await this.api.post(`/products/highlight/${productId}`);
+    return response.data.data!.product;
+  }
+
+  async unhighlightProduct(productId: string): Promise<void> {
+    await this.api.delete(`/products/highlight/${productId}`);
+  }
+
+  async updateHighlightOrder(products: Array<{ id: string; order: number }>): Promise<void> {
+    await this.api.put('/products/highlight/order', { products });
   }
 
   // Health check

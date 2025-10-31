@@ -9,8 +9,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { 
   MagnifyingGlassIcon,
   PencilIcon,
-  XMarkIcon,
-  EyeIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 function OrdersPage() {
@@ -21,7 +20,6 @@ function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusForm, setStatusForm] = useState<{
     orderStatus: Order['orderStatus'];
@@ -94,11 +92,6 @@ function OrdersPage() {
       adminNotes: order.adminNotes || ''
     });
     setShowStatusModal(true);
-  };
-
-  const openDetailModal = (order: Order) => {
-    setSelectedOrder(order);
-    setShowDetailModal(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -251,17 +244,9 @@ function OrdersPage() {
                     <div className="text-sm font-medium text-gray-900">{order.orderNumber}</div>
                     <div className="text-sm text-gray-500">#{order._id.slice(-8)}</div>
                   </td>
-                  
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {order.shippingAddress?.name || 'Guest User'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {order.shippingAddress?.phone || 'No phone'}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Guest Order
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{order.user.name}</div>
+                    <div className="text-sm text-gray-500">{order.user.email}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">
@@ -290,13 +275,6 @@ function OrdersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button 
-                        onClick={() => openDetailModal(order)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="View Details"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
                       <button 
                         onClick={() => openStatusModal(order)}
                         className="text-indigo-600 hover:text-indigo-900"
@@ -429,124 +407,6 @@ function OrdersPage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
                 >
                   Update Status
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Order Detail Modal */}
-      {showDetailModal && selectedOrder && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Order Details</h3>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Order Information */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Order Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Order Number:</span> {selectedOrder.orderNumber}</p>
-                      <p><span className="font-medium">Order ID:</span> {selectedOrder._id}</p>
-                      <p><span className="font-medium">Order Date:</span> {formatDate(selectedOrder.createdAt)}</p>
-                      <p><span className="font-medium">Order Status:</span> 
-                        <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedOrder.orderStatus)}`}>
-                          {selectedOrder.orderStatus}
-                        </span>
-                      </p>
-                      <p><span className="font-medium">Payment Status:</span> 
-                        <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(selectedOrder.paymentStatus)}`}>
-                          {selectedOrder.paymentStatus}
-                        </span>
-                      </p>
-                      <p><span className="font-medium">Payment Method:</span> {selectedOrder.paymentMethod}</p>
-                      <p><span className="font-medium">Total Amount:</span> {formatCurrency(selectedOrder.totalAmount)}</p>
-                      <p><span className="font-medium">Subtotal:</span> {formatCurrency(selectedOrder.subtotal)}</p>
-                      <p><span className="font-medium">Shipping Cost:</span> {formatCurrency(selectedOrder.shippingCost)}</p>
-                      <p><span className="font-medium">Tax:</span> {formatCurrency(selectedOrder.tax)}</p>
-                    </div>
-                  </div>
-
-                  {/* Customer Information */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Customer Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Name:</span> {selectedOrder.shippingAddress?.name || 'Guest User'}</p>
-                      <p><span className="font-medium">Phone:</span> {selectedOrder.shippingAddress?.phone || 'No phone'}</p>
-                      <p><span className="font-medium">Order Type:</span> Guest Order</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Shipping Address */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Shipping Address</h4>
-                    <div className="space-y-2 text-sm">
-                      <p className="font-medium">{selectedOrder.shippingAddress?.name}</p>
-                      <p>{selectedOrder.shippingAddress?.street}</p>
-                      <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}</p>
-                      <p>{selectedOrder.shippingAddress?.country}</p>
-                      <p className="text-gray-600">Phone: {selectedOrder.shippingAddress?.phone}</p>
-                    </div>
-                  </div>
-
-                  {/* Order Items */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
-                    <div className="space-y-3">
-                      {selectedOrder.items.map((item, index) => (
-                        <div key={index} className="border-b border-gray-200 pb-2 last:border-b-0">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{item.product.name}</p>
-                              <p className="text-xs text-gray-600">Quantity: {item.quantity}</p>
-                              <p className="text-xs text-gray-600">Rental Duration: {item.rentalDuration} day(s)</p>
-                              <p className="text-xs text-gray-600">Price: {formatCurrency(item.price)}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium text-sm">{formatCurrency(item.totalPrice)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Rental Information */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Rental Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Rental Start Date:</span> {formatDate(selectedOrder.rentalStartDate)}</p>
-                      <p><span className="font-medium">Rental End Date:</span> {formatDate(selectedOrder.rentalEndDate)}</p>
-                      {selectedOrder.notes && (
-                        <p><span className="font-medium">Notes:</span> {selectedOrder.notes}</p>
-                      )}
-                      {selectedOrder.adminNotes && (
-                        <p><span className="font-medium">Admin Notes:</span> {selectedOrder.adminNotes}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                >
-                  Close
                 </button>
               </div>
             </div>
