@@ -13,7 +13,8 @@ import {
   CreateProductData,
   CreateMerchantData,
   Merchant,
-  UpdateOrderStatusData
+  UpdateOrderStatusData,
+  Booking
 } from '@/types';
 
 class ApiService {
@@ -241,23 +242,23 @@ class ApiService {
   }
 
   // Bookings endpoints
-  async getBookings(): Promise<{ bookings: any[] }> {
-    const response = await this.api.get('/bookings');
+  async getBookings(): Promise<{ bookings: Booking[] }> {
+    const response = await this.api.get<ApiResponse<{ bookings: Booking[] }>>('/bookings');
     return response.data.data!;
   }
 
-  async getBooking(id: string): Promise<any> {
-    const response = await this.api.get(`/bookings/${id}`);
+  async getBooking(id: string): Promise<Booking> {
+    const response = await this.api.get<ApiResponse<{ booking: Booking }>>(`/bookings/${id}`);
     return response.data.data!.booking;
   }
 
-  async createBooking(data: any): Promise<any> {
-    const response = await this.api.post('/bookings', data);
+  async createBooking(data: Partial<Booking>): Promise<Booking> {
+    const response = await this.api.post<ApiResponse<{ booking: Booking }>>('/bookings', data);
     return response.data.data!.booking;
   }
 
-  async updateBooking(id: string, data: any): Promise<any> {
-    const response = await this.api.put(`/bookings/${id}`, data);
+  async updateBooking(id: string, data: Partial<Booking>): Promise<Booking> {
+    const response = await this.api.put<ApiResponse<{ booking: Booking }>>(`/bookings/${id}`, data);
     return response.data.data!.booking;
   }
 

@@ -1,16 +1,25 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer, View, Event } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { enUS } from 'date-fns/locale/en-US';
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { apiService } from '@/services/api';
 import { Booking } from '@/types';
 import Image from 'next/image';
 import BookingForm from './BookingForm';
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  resource: Booking;
+}
+
 const locales = {
-  "en-US": require("date-fns/locale/en-US")
+  "en-US": enUS
 };
 
 const localizer = dateFnsLocalizer({
@@ -48,13 +57,15 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
   // Convert bookings to calendar events with proper date handling
   const events = bookings.map(booking => {
     const startDate = booking.sendDate ? new Date(booking.sendDate) : new Date();
-    let endDate = booking.receiveDate ? new Date(booking.receiveDate) : new Date();
+    const endDate = booking.receiveDate ? new Date(booking.receiveDate) : new Date();
     // Set end date to end of the receive date (23:59:59)
     endDate.setHours(0, 0, 0, 0);
     
+    const dressName = (booking as unknown as { dressId?: { name?: string } }).dressId?.name || 'Dress';
+    
     return {
       id: booking._id,
-      title: `${booking.customer.name} - ${(booking as any).dressId?.name || 'Dress'}`,
+      title: `${booking.customer.name} - ${dressName}`,
       start: startDate,
       end: endDate,
       resource: booking,
@@ -62,12 +73,13 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
     };
   });
 
-  const handleSelectEvent = (event: any) => {
-    setSelected(event.resource);
+  const handleSelectEvent = (event: Event) => {
+    const calendarEvent = event as unknown as CalendarEvent;
+    setSelected(calendarEvent.resource);
     setIsEditing(false);
   };
 
-  const handleEditSave = async (updatedBooking: any) => {
+  const handleEditSave = async (updatedBooking: Partial<Booking>) => {
     try {
       await apiService.updateBooking(selected!._id, updatedBooking);
       setIsEditing(false);
@@ -116,9 +128,13 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
             style={{ height: 600 }}
             onSelectEvent={handleSelectEvent}
             view={view}
-            onView={(newView: any) => setView(newView)}
+            onView={(newView: View) => {
+              if (newView === 'month' || newView === 'week' || newView === 'day') {
+                setView(newView);
+              }
+            }}
             date={date}
-            onNavigate={date => setDate(date)}
+            onNavigate={(newDate: Date) => setDate(newDate)}
             popup
             defaultView="month"
             views={['month', 'week', 'day']}
@@ -126,8 +142,8 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
               eventTimeRangeFormat: () => '', // Remove time display from events
             }}
             components={{
-              eventWrapper: (props: any) => {
-                const event = props.event;
+              eventWrapper: (props) => {
+                const event = props.event as unknown as CalendarEvent;
                 const tooltip = [
                   event.title,
                   `Send: ${format(event.start, 'MMM d, yyyy')}`,
@@ -136,11 +152,10 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
                 
                 return (
                   <div 
+                    {...props}
                     title={tooltip}
-                    className="rounded-sm overflow-hidden"
-                  >
-                    {props.children}
-                  </div>
+                    className={`rounded-sm overflow-hidden ${props.className || ''}`}
+                  />
                 );
               }
             }}
@@ -188,7 +203,7 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
                   <div>
                     <h4 className="font-medium mb-2">Dress Details</h4>
                     <div className="space-y-2">
-                      <div className="text-sm font-medium">{(selected as any).dressId?.name}</div>
+                      <div className="text-sm font-medium">{(selected as unknown as { dressId?: { name?: string } }).dressId?.name || 'N/A'}</div>
                       {selected.dressImage && (
                         <div className="relative h-48 w-full">
                           <Image
@@ -244,12 +259,3 @@ const BookingsCalendar: React.FC<Props> = ({ onRefresh }) => {
 };
 
 export default BookingsCalendar;
-
-// Add proper types for calendar events
-interface CalendarEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  resource: Booking;
-}

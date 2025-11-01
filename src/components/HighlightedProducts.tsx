@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { apiService } from '../services/api';
 import { Product } from '../types';
 
@@ -58,28 +59,6 @@ const HighlightedProducts: React.FC = () => {
     }
   };
 
-  const handleReorder = async (dragIndex: number, hoverIndex: number) => {
-    const draggedProduct = highlightedProducts[dragIndex];
-    const newOrder = [...highlightedProducts];
-    newOrder.splice(dragIndex, 1);
-    newOrder.splice(hoverIndex, 0, draggedProduct);
-
-    setHighlightedProducts(newOrder);
-
-    // Update order in backend
-    const orderData = newOrder.map((product, index) => ({
-      id: product._id,
-      order: index + 1
-    }));
-
-    try {
-      await apiService.updateHighlightOrder(orderData);
-    } catch (err) {
-      setError('Failed to update order');
-      console.error('Error updating order:', err);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -125,11 +104,14 @@ const HighlightedProducts: React.FC = () => {
                   <div className="text-sm font-medium text-gray-500 w-8">
                     {index + 1}
                   </div>
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
+                  <div className="relative w-16 h-16">
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-900">{product.name}</h4>
                     <p className="text-sm text-gray-500">₹{product.price}</p>
@@ -162,11 +144,14 @@ const HighlightedProducts: React.FC = () => {
                 key={product._id}
                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
               >
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-32 object-cover rounded-lg mb-3"
-                />
+                <div className="relative w-full h-32 mb-3">
+                  <Image
+                    src={product.images[0]}
+                    alt={product.name}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                </div>
                 <h4 className="text-sm font-medium text-gray-900 mb-1">{product.name}</h4>
                 <p className="text-sm text-gray-500 mb-2">₹{product.price}</p>
                 <button

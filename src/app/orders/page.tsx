@@ -15,7 +15,6 @@ import {
 function OrdersPage() {
   // Use null for initial state to indicate not-yet-loaded
   const [orders, setOrders] = useState<Order[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +30,8 @@ function OrdersPage() {
     paymentStatus: 'Pending',
     adminNotes: ''
   });
+
+  const [, setLoading] = useState(true);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -49,8 +50,8 @@ function OrdersPage() {
       
       setOrders(ordersData);
       setTotalPages(response.data.totalPages || 1);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
+    } catch {
+      console.error('Error fetching orders');
       toast.error('Failed to load orders');
       setOrders([]); // Set empty array on error
     } finally {
@@ -72,9 +73,9 @@ function OrdersPage() {
       setSelectedOrder(null);
       setStatusForm({ orderStatus: 'Pending', paymentStatus: 'Pending', adminNotes: '' });
       fetchOrders();
-    } catch (error: unknown) {
-      console.error('Error updating order status:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update order status';
+    } catch (err: unknown) {
+      console.error('Error updating order status:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update order status';
       toast.error(errorMessage);
     }
   };
@@ -86,9 +87,9 @@ function OrdersPage() {
       await apiService.cancelOrder(orderId, 'Order cancelled by admin');
       toast.success('Order cancelled successfully');
       fetchOrders();
-    } catch (error: unknown) {
-      console.error('Error cancelling order:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to cancel order';
+    } catch (err: unknown) {
+      console.error('Error cancelling order:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel order';
       toast.error(errorMessage);
     }
   };
@@ -144,7 +145,7 @@ function OrdersPage() {
       const date = new Date(dateString);
       // Use ISO format for consistent server/client rendering
       return date.toISOString().split('T')[0];
-    } catch (error) {
+    } catch {
       return 'Invalid date';
     }
   };
@@ -153,7 +154,7 @@ function OrdersPage() {
     try {
       // Use fixed format instead of Intl for consistent server/client rendering
       return `₹${amount.toFixed(2)}`;
-    } catch (error) {
+    } catch {
       return '₹0.00';
     }
   };

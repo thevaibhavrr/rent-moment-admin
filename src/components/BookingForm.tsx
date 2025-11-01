@@ -1,30 +1,54 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import ImageUpload from './ImageUpload';
 import { apiService } from '@/services/api';
 import { Product, Booking } from '@/types';
+
+interface BookingFormData {
+  dressId: string;
+  priceAfterBargain: number;
+  advance: number;
+  pending: number;
+  securityAmount: number;
+  sendDate: string;
+  receiveDate: string;
+  customer: {
+    name: string;
+    image?: string;
+    location?: string;
+    mobile?: string;
+  };
+  referenceCustomer?: string;
+  dressImage?: string;
+}
 
 interface Props {
   onSaved?: (booking: Booking) => void;
   initial?: Partial<Booking>;
 }
 
-const BookingForm: React.FC<Props> = ({ onSaved, initial = {} }) => {
+const BookingForm: React.FC<Props> = ({ onSaved, initial = {} as Partial<Booking> }) => {
   const [dresses, setDresses] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState<any>({
-    dressId: initial.dressId || '',
-    priceAfterBargain: initial.priceAfterBargain || 0,
-    advance: initial.advance || 0,
-    pending: initial.pending || 0,
-    securityAmount: initial.securityAmount || 0,
-    sendDate: initial.sendDate || '',
-    receiveDate: initial.receiveDate || '',
-    customer: initial.customer || { name: '', image: '', location: '', mobile: '' },
-    referenceCustomer: initial.referenceCustomer || '',
-    dressImage: initial.dressImage || ''
+  const [form, setForm] = useState<BookingFormData>({
+    dressId: initial.dressId ?? '',
+    priceAfterBargain: initial.priceAfterBargain ?? 0,
+    advance: initial.advance ?? 0,
+    pending: initial.pending ?? 0,
+    securityAmount: initial.securityAmount ?? 0,
+    sendDate: initial.sendDate ?? '',
+    receiveDate: initial.receiveDate ?? '',
+    customer: {
+      name: initial.customer?.name ?? '',
+      image: initial.customer?.image ?? '',
+      location: initial.customer?.location ?? '',
+      mobile: initial.customer?.mobile ?? ''
+    },
+    referenceCustomer: initial.referenceCustomer ?? '',
+    dressImage: initial.dressImage ?? ''
   });
 
   const fetchProducts = useCallback(async (searchTerm: string = '') => {
@@ -50,8 +74,8 @@ const BookingForm: React.FC<Props> = ({ onSaved, initial = {} }) => {
       }
       
       setDresses(items);
-    } catch (error) {
-      console.error('Error fetching products:', error);
+    } catch {
+      console.error('Error fetching products');
       setDresses([]);
     } finally {
       setLoading(false);
@@ -80,12 +104,15 @@ const BookingForm: React.FC<Props> = ({ onSaved, initial = {} }) => {
 
   const selectedProduct = dresses.find(p => p._id === form.dressId);
 
-  const handleChange = (path: string, value: any) => {
-    setForm((f: any) => ({ ...f, [path]: value }));
+  const handleChange = (path: keyof BookingFormData, value: string | number) => {
+    setForm((f: BookingFormData) => ({ ...f, [path]: value as never }));
   };
 
-  const handleCustomerChange = (key: string, value: any) => {
-    setForm((f: any) => ({ ...f, customer: { ...(f.customer || {}), [key]: value } }));
+  const handleCustomerChange = (key: keyof BookingFormData['customer'], value: string) => {
+    setForm((f: BookingFormData) => ({ 
+      ...f, 
+      customer: { ...f.customer, [key]: value } 
+    }));
   };
 
   const handleSubmit = async () => {
@@ -94,9 +121,9 @@ const BookingForm: React.FC<Props> = ({ onSaved, initial = {} }) => {
       const booking = await apiService.createBooking(payload);
       if (onSaved) onSaved(booking);
       alert('Booking saved');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(err?.message || 'Failed to save booking');
+      alert(err instanceof Error ? err.message : 'Failed to save booking');
     }
   };
 
@@ -129,7 +156,7 @@ const BookingForm: React.FC<Props> = ({ onSaved, initial = {} }) => {
         >
           <option value="">-- Select Product --</option>
           {filtered.length === 0 && !loading && search ? (
-            <option value="" disabled>No products found matching "{search}"</option>
+            <option value="" disabled>No products found matching &quot;{search}&quot;</option>
           ) : (
             filtered.map(d => (
               <option key={d._id} value={d._id}>
@@ -148,14 +175,15 @@ const BookingForm: React.FC<Props> = ({ onSaved, initial = {} }) => {
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
             <div className="border border-black rounded-lg overflow-hidden inline-block">
-              <img
-                src={selectedProduct.images[0]}
-                alt={selectedProduct.name}
-                className="w-48 h-48 object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
+              <div className="relative w-48 h-48">
+                <Image
+                  src={selectedProduct.images[0]}
+                  alt={selectedProduct.name}
+                  fill
+                  className="object-cover"
+                  onError={() => {/* Handle error if needed */}}
+                />
+              </div>
             </div>
             <div className="mt-2 text-sm text-gray-600">
               <p className="font-medium">{selectedProduct.name}</p>
