@@ -199,3 +199,27 @@ export interface UpdateOrderStatusData {
   paymentStatus?: Order['paymentStatus'];
   adminNotes?: string;
 } 
+
+export interface BookingCustomer {
+  name: string;
+  image?: string;
+  location?: string;
+  mobile?: string;
+}
+
+export interface Booking {
+  _id: string;
+  bookingId: string;
+  dressId: string;
+  priceAfterBargain: number;
+  advance: number;
+  pending: number;
+  securityAmount: number;
+  sendDate?: string;
+  receiveDate?: string;
+  customer: BookingCustomer;
+  referenceCustomer?: string;
+  dressImage?: string;
+  createdAt: string;
+  updatedAt: string;
+}

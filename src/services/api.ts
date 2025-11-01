@@ -240,6 +240,31 @@ class ApiService {
     await this.api.put('/products/highlight/order', { products });
   }
 
+  // Bookings endpoints
+  async getBookings(): Promise<{ bookings: any[] }> {
+    const response = await this.api.get('/bookings');
+    return response.data.data!;
+  }
+
+  async getBooking(id: string): Promise<any> {
+    const response = await this.api.get(`/bookings/${id}`);
+    return response.data.data!.booking;
+  }
+
+  async createBooking(data: any): Promise<any> {
+    const response = await this.api.post('/bookings', data);
+    return response.data.data!.booking;
+  }
+
+  async updateBooking(id: string, data: any): Promise<any> {
+    const response = await this.api.put(`/bookings/${id}`, data);
+    return response.data.data!.booking;
+  }
+
+  async deleteBooking(id: string): Promise<void> {
+    await this.api.delete(`/bookings/${id}`);
+  }
+
   // Health check
   async healthCheck(): Promise<{ status: string; message: string }> {
     const response: AxiosResponse<{ status: string; message: string }> = await this.api.get('/health');

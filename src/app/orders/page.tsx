@@ -13,7 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  // Use null for initial state to indicate not-yet-loaded
+  const [orders, setOrders] = useState<Order[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -39,11 +40,19 @@ function OrdersPage() {
       if (statusFilter) filters.status = statusFilter;
 
       const response: PaginatedResponse<Order> = await apiService.getOrders(currentPage, 10, filters);
-      setOrders(Array.isArray(response.data.orders) ? response.data.orders : []);
+      
+      // Handle server-side data safely
+      let ordersData: Order[] = [];
+      if (response.data && 'orders' in response.data) {
+        ordersData = Array.isArray(response.data.orders) ? response.data.orders : [];
+      }
+      
+      setOrders(ordersData);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
+      setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -131,23 +140,26 @@ function OrdersPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    try {
+      const date = new Date(dateString);
+      // Use ISO format for consistent server/client rendering
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    try {
+      // Use fixed format instead of Intl for consistent server/client rendering
+      return `₹${amount.toFixed(2)}`;
+    } catch (error) {
+      return '₹0.00';
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
+  // Remove the early loading return to prevent hydration mismatch
+  // Loading state is now handled in the table body
 
   return (
     <div className="space-y-6">
@@ -238,22 +250,34 @@ function OrdersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order) => (
+              {!orders ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                    Loading orders...
+                  </td>
+                </tr>
+              ) : orders.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                    No orders found
+                  </td>
+                </tr>
+              ) : orders.map((order) => (
                 <tr key={order._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{order.orderNumber}</div>
                     <div className="text-sm text-gray-500">#{order._id.slice(-8)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.user.name}</div>
-                    <div className="text-sm text-gray-500">{order.user.email}</div>
+                    <div className="text-sm font-medium text-gray-900">{order?.user?.name}</div>
+                    <div className="text-sm text-gray-500">{order?.user?.email}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">
                       {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {order.items.slice(0, 2).map(item => item.product.name).join(', ')}
+                      {order.items.slice(0, 2).map(item => item.product?.name || 'Product unavailable').join(', ')}
                       {order.items.length > 2 && '...'}
                     </div>
                   </td>

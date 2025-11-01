@@ -11,6 +11,7 @@ import {
   ShoppingCartIcon,
   BuildingStorefrontIcon,
   StarIcon,
+  CalendarIcon,
   Bars3Icon,
   XMarkIcon,
   UserCircleIcon,
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Categories', href: '/categories', icon: TagIcon },
   { name: 'Merchants', href: '/merchants', icon: BuildingStorefrontIcon },
   { name: 'Orders', href: '/orders', icon: ShoppingCartIcon },
+  { name: 'Bookings', href: '/bookings', icon: CalendarIcon },
   { name: 'Highlighted', href: '/highlighted', icon: StarIcon },
 ];
 
